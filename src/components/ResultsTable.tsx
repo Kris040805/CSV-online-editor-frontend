@@ -10,19 +10,16 @@ import {
   Typography,
 } from "@mui/material";
 
-type Props = {
-  headers: string[];
+interface ResultsTableProps {
   rows: Record<string, any>[];
-};
+}
 
-const ResultsTable: React.FC<Props> = ({ headers, rows }) => {
+const ResultsTable: React.FC<ResultsTableProps> = ({ rows }) => {
   if (!rows || rows.length === 0) {
-    return (
-      <Typography sx={{ mt: 2 }}>
-        No results to display.
-      </Typography>
-    );
+    return <Typography sx={{ mt: 2 }}>No results to display.</Typography>;
   }
+
+  const headers = Object.keys(rows[0]);
 
   return (
     <TableContainer component={Paper} sx={{ mt: 3 }}>
@@ -30,20 +27,15 @@ const ResultsTable: React.FC<Props> = ({ headers, rows }) => {
         <TableHead>
           <TableRow>
             {headers.map((header) => (
-              <TableCell key={header} sx={{ fontWeight: "bold" }}>
-                {header}
-              </TableCell>
+              <TableCell key={header} sx={{ fontWeight: "bold" }}>{header}</TableCell>
             ))}
           </TableRow>
         </TableHead>
-
         <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={index} hover>
+          {rows.map((row, i) => (
+            <TableRow key={i} hover>
               {headers.map((header) => (
-                <TableCell key={header}>
-                  {row[header]?.toString()}
-                </TableCell>
+                <TableCell key={header}>{row[header]?.toString()}</TableCell>
               ))}
             </TableRow>
           ))}

@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { Container, Typography, Box, Paper } from "@mui/material";
-
 import FileUpload from "./components/FileUpload";
 import SqlExecutor from "./components/SqlExecutor";
 import ResultsTable from "./components/ResultsTable";
 
-function App() {
-  // Централно state за таблицата
+const App: React.FC = () => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<any[]>([]);
 
@@ -24,22 +22,16 @@ function App() {
 
         {/* SQL Section */}
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-          <SqlExecutor
-            setHeaders={setHeaders}
-            setRows={setRows}
-          />
+          <SqlExecutor setHeaders={setHeaders} setRows={setRows} />
         </Paper>
 
         {/* Results Section */}
         <Paper elevation={3} sx={{ p: 3 }}>
-          <ResultsTable
-            headers={headers}
-            rows={rows}
-          />
+          <ResultsTable rows={rows} />
         </Paper>
       </Box>
     </Container>
   );
-}
+};
 
 export default App;

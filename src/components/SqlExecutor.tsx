@@ -8,22 +8,22 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { executeSql } from "../services/api";
+import { executeSql, exportCsv } from "../services/api";
 
 interface SqlExecutorProps {
   setHeaders: (headers: string[]) => void;
   setRows: (rows: any[]) => void;
 }
 
-const SqlExecutor: React.FC<SqlExecutorProps> = ({
-  setHeaders,
-  setRows,
-}) => {
+const SqlExecutor: React.FC<SqlExecutorProps> = ({ setHeaders, setRows }) => {
   const [query, setQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [severity, setSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+
+  // За export
+  const [exporting, setExporting] = useState<boolean>(false);
 
   const handleExecute = async () => {
     if (!query.trim()) {
@@ -39,7 +39,6 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({
       const data = await executeSql(query);
 
       if (data.type === "SELECT") {
-        // Извличаме headers от първия ред
         if (data.rows && data.rows.length > 0) {
           const headers = Object.keys(data.rows[0]);
           setHeaders(headers);
@@ -48,14 +47,11 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({
         }
 
         setRows(data.rows || []);
-
         setMessage(`Query executed. Returned ${data.rowsCount} rows.`);
         setSeverity("success");
       } else {
-        // INSERT / UPDATE / DELETE
         setHeaders([]);
         setRows([]);
-
         setMessage(
           `${data.type} executed successfully. Affected rows: ${data.affectedRows}`
         );
@@ -67,6 +63,35 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({
       setSeverity("error");
     } finally {
       setLoading(false);
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // Изпращаме tableName "current" – backend да реши коя таблица
+      const csvData = await exportCsv("current");
+
+      // Създаваме Blob и trigger на download
+      const blob = new Blob([csvData], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "export.csv";
+      link.click();
+
+      URL.revokeObjectURL(url); // почистваме
+
+      setMessage("CSV exported successfully!");
+      setSeverity("success");
+    } catch (error) {
+      console.error(error);
+      setMessage("CSV export failed.");
+      setSeverity("error");
+    } finally {
+      setExporting(false);
       setOpenSnackbar(true);
     }
   };
@@ -98,6 +123,17 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({
         </Button>
 
         {loading && <CircularProgress size={24} />}
+
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          Export CSV
+        </Button>
+
+        {exporting && <CircularProgress size={24} />}
       </Box>
 
       <Snackbar

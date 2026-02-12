@@ -1,105 +1,112 @@
 import React, { useState } from "react";
 import {
+  Box,
   Button,
+  TextField,
+  Typography,
   Snackbar,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
+  CircularProgress,
 } from "@mui/material";
-import { uploadCsv } from "../services/api";
+import { executeSql, exportCsv } from "../services/api";
 
-interface FileUploadProps {
-  setRows: (rows: any[]) => void;
+interface SqlExecutorProps {
   setHeaders: (headers: string[]) => void;
+  setRows: (rows: any[]) => void;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ setRows, setHeaders }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] =
-    useState<"success" | "error">("success");
+const SqlExecutor: React.FC<SqlExecutorProps> = ({ setHeaders, setRows }) => {
+  const [query, setQuery] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [severity, setSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const handleOpenDialog = () => setOpenDialog(true);
-  const handleCloseDialog = () => setOpenDialog(false);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      setSnackbarMessage("Please select a file.");
-      setSnackbarSeverity("error");
+  const handleExecute = async () => {
+    if (!query.trim()) {
+      setMessage("SQL query cannot be empty.");
+      setSeverity("error");
       setOpenSnackbar(true);
       return;
     }
 
     try {
-      const data = await uploadCsv(file); // използваме централен API service
-      setSnackbarMessage("File imported successfully!");
-      setSnackbarSeverity("success");
+      setLoading(true);
+      const data = await executeSql(query);
+
+      if (data.type === "SELECT") {
+        const headers = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
+        setHeaders(headers);
+        setRows(data.rows || []);
+        setMessage(`Query executed. Returned ${data.rowsCount} rows.`);
+      } else {
+        setHeaders([]);
+        setRows([]);
+        setMessage(`${data.type} executed successfully. Affected rows: ${data.affectedRows}`);
+      }
+
+      setSeverity("success");
+    } catch (error: any) {
+      console.error(error);
+      setMessage(error.response?.data?.error || "SQL execution failed.");
+      setSeverity("error");
+    } finally {
+      setLoading(false);
       setOpenSnackbar(true);
-      setOpenDialog(false);
+    }
+  };
 
-      // След upload, нулираме резултатите от SQL
-      setRows([]);
-      setHeaders([]);
-
-      // Ако backend върне данни за таблицата, можем да ги сетнем тук:
-      // setRows(data.rows || []);
-      // setHeaders(data.headers || []);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const csvData = await exportCsv("current");
+      const blob = new Blob([csvData], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "export.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+      setMessage("CSV exported successfully!");
+      setSeverity("success");
     } catch (error) {
-      setSnackbarMessage("Upload error.");
-      setSnackbarSeverity("error");
+      console.error(error);
+      setMessage("CSV export failed.");
+      setSeverity("error");
+    } finally {
+      setExporting(false);
       setOpenSnackbar(true);
     }
   };
 
   return (
-    <>
-      <Button variant="contained" onClick={handleOpenDialog}>
-        Upload CSV
-      </Button>
+    <Box mt={4}>
+      <Typography variant="h6" gutterBottom>SQL Executor</Typography>
+      <TextField
+        label="Write your SQL query"
+        multiline
+        minRows={4}
+        fullWidth
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        variant="outlined"
+      />
 
-      <Dialog open={openDialog} onClose={handleCloseDialog}>
-        <DialogTitle>Upload CSV File</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Select a CSV file from your computer.
-          </DialogContentText>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            style={{ marginTop: 16 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpload}>
-            Upload
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Box mt={2} display="flex" alignItems="center" gap={2}>
+        <Button variant="contained" color="secondary" onClick={handleExecute} disabled={loading}>RUN</Button>
+        {loading && <CircularProgress size={24} />}
+        <Button variant="outlined" color="primary" onClick={handleExport} disabled={exporting}>Export CSV</Button>
+        {exporting && <CircularProgress size={24} />}
+      </Box>
 
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={4000}
-        onClose={() => setOpenSnackbar(false)}
-      >
-        <Alert severity={snackbarSeverity} sx={{ width: "100%" }}>
-          {snackbarMessage}
+      <Snackbar open={openSnackbar} autoHideDuration={4000} onClose={() => setOpenSnackbar(false)}>
+        <Alert severity={severity} onClose={() => setOpenSnackbar(false)} sx={{ width: "100%" }}>
+          {message}
         </Alert>
       </Snackbar>
-    </>
+    </Box>
   );
 };
 
-export default FileUpload;
+export default SqlExecutor;
