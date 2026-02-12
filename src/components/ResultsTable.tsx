@@ -33,9 +33,9 @@ const ResultsTable: React.FC<ResultsTableProps> = ({ rows }) => {
         </TableHead>
         <TableBody>
           {rows.map((row, i) => (
-            <TableRow key={i} hover>
+            <TableRow key={i} hover sx={{ bgcolor: i % 2 === 0 ? "#f9f9f9" : "white" }}>
               {headers.map((header) => (
-                <TableCell key={header}>{row[header]?.toString()}</TableCell>
+                <TableCell key={header} sx={{ border: "1px solid #ddd" }}>{row[header]?.toString()}</TableCell>
               ))}
             </TableRow>
           ))}

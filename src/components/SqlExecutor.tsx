@@ -71,7 +71,7 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({ setHeaders, setRows }) => {
     setExporting(true);
     try {
       // Изпращаме tableName "current" – backend да реши коя таблица
-      const csvData = await exportCsv("current");
+      const csvData = await exportCsv("temporary_table");
 
       // Създаваме Blob и trigger на download
       const blob = new Blob([csvData], { type: "text/csv" });
@@ -117,7 +117,7 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({ setHeaders, setRows }) => {
           variant="contained"
           color="secondary"
           onClick={handleExecute}
-          disabled={loading}
+          disabled={loading || !query.trim()}
         >
           RUN
         </Button>
