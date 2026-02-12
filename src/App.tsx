@@ -1,19 +1,39 @@
 import React, { useState } from "react";
 import FileUpload from "./components/FileUpload";
 import SqlExecutor from "./components/SqlExecutor";
+import ResultsTable from "./components/ResultsTable";
+import { Container, Typography } from "@mui/material";
 
 function App() {
-    const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [message, setMessage] = useState("");
 
-    return (
-        <div style={{ padding: "20px" }}>
-            <h1>CSV Online SQL Editor</h1>
+  return (
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        CSV Online SQL Editor
+      </Typography>
 
-            <FileUpload />
+      <FileUpload
+        setMessage={setMessage}
+        setRows={setRows}
+      />
 
-            <SqlExecutor onSelectResult={setRows} />
-        </div>
-    );
+
+      <SqlExecutor
+        setRows={setRows}
+        setMessage={setMessage}
+      />
+
+      {message && (
+        <Typography sx={{ mt: 2 }}>
+          {message}
+        </Typography>
+      )}
+
+      <ResultsTable rows={rows} />
+    </Container>
+  );
 }
 
 export default App;

@@ -11,14 +11,18 @@ import {
   DialogContentText,
 } from "@mui/material";
 
-function FileUpload() {
+type Props = {
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
+  setRows: React.Dispatch<React.SetStateAction<Record<string, any>[]>>;
+};
+
+const FileUpload: React.FC<Props> = ({ setMessage, setRows }) => {
   const [file, setFile] = useState<File | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarSeverity, setSnackbarSeverity] =
+    useState<"success" | "error">("success");
 
-  // Отваря диалога за избор на файл
   const handleOpenDialog = () => {
     setOpenDialog(true);
   };
@@ -35,7 +39,7 @@ function FileUpload() {
 
   const handleUpload = async () => {
     if (!file) {
-      setSnackbarMessage("Please select a file.");
+      setMessage("Please select a file.");
       setSnackbarSeverity("error");
       setOpenSnackbar(true);
       return;
@@ -49,32 +53,35 @@ function FileUpload() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setSnackbarMessage("File imported successfully!");
+      setRows([]); // изчистваме старата таблица
+      setMessage(
+        `File imported successfully. Rows: ${response.data.rows}, Columns: ${response.data.columns}`
+      );
+
       setSnackbarSeverity("success");
       setOpenSnackbar(true);
-      console.log(response.data);
-      setOpenDialog(false); // Затваряме диалога
-    } catch (error) {
-      console.error(error);
-      setSnackbarMessage("Upload error.");
+      setOpenDialog(false);
+      setFile(null);
+    } catch (error: any) {
+      setMessage(error.response?.data?.error || "Upload error.");
       setSnackbarSeverity("error");
       setOpenSnackbar(true);
     }
   };
 
   return (
-    <div>
-      <Button variant="contained" color="primary" onClick={handleOpenDialog}>
+    <div style={{ marginBottom: "20px" }}>
+      <Button variant="contained" onClick={handleOpenDialog}>
         Upload CSV
       </Button>
 
-      {/* Диалог за избор на файл */}
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Upload CSV File</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Select a CSV file from your computer to import.
           </DialogContentText>
+
           <input
             type="file"
             accept=".csv"
@@ -82,15 +89,15 @@ function FileUpload() {
             style={{ marginTop: "16px" }}
           />
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleUpload} variant="contained" color="primary">
+          <Button variant="contained" onClick={handleUpload}>
             Upload
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar за съобщения */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={4000}
@@ -98,15 +105,17 @@ function FileUpload() {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setOpenSnackbar(false)}
           severity={snackbarSeverity}
+          onClose={() => setOpenSnackbar(false)}
           sx={{ width: "100%" }}
         >
-          {snackbarMessage}
+          {snackbarSeverity === "success"
+            ? "File uploaded successfully!"
+            : "Upload failed!"}
         </Alert>
       </Snackbar>
     </div>
   );
-}
+};
 
 export default FileUpload;

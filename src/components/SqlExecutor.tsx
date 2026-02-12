@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { Button, TextField } from "@mui/material";
 
-interface SqlExecutorProps {
-    onSelectResult: (rows: any[]) => void;
-}
+type Props = {
+    setRows: React.Dispatch<React.SetStateAction<Record<string, any>[]>>;
+    setMessage: React.Dispatch<React.SetStateAction<string>>;
+};
 
-const SqlExecutor: React.FC<SqlExecutorProps> = ({ onSelectResult }) => {
-    const [query, setQuery] = useState<string>("");
-    const [message, setMessage] = useState<string>("");
+const SqlExecutor: React.FC<Props> = ({ setRows, setMessage }) => {
+    const [query, setQuery] = useState("");
 
     const handleExecute = async () => {
         if (!query.trim()) {
-            setMessage("Please enter a SQL query.");
+            setMessage("SQL query cannot be empty.");
             return;
         }
 
@@ -23,39 +24,40 @@ const SqlExecutor: React.FC<SqlExecutorProps> = ({ onSelectResult }) => {
             const data = response.data;
 
             if (data.type === "SELECT") {
+                setRows(data.rows);
                 setMessage(`Returned ${data.rowsCount} rows.`);
-                onSelectResult(data.rows);
             } else {
+                setRows([]); // изчистваме таблицата
                 setMessage(
                     `${data.type} successful. Affected rows: ${data.affectedRows}`
                 );
-                onSelectResult([]); // изчистваме таблицата
             }
         } catch (error: any) {
-            if (error.response?.data?.error) {
-                setMessage(error.response.data.error);
-            } else {
-                setMessage("SQL execution error.");
-            }
+            setRows([]);
+            setMessage(
+                error.response?.data?.error || "SQL execution error."
+            );
         }
     };
 
     return (
         <div style={{ marginTop: "20px" }}>
-            <h2>SQL Executor</h2>
-
-            <textarea
+            <TextField
+                label="Write your SQL query"
+                multiline
                 rows={4}
-                style={{ width: "100%" }}
-                placeholder="Write your SQL query here..."
+                fullWidth
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
             />
 
-            <br />
-            <button onClick={handleExecute}>RUN</button>
-
-            <p>{message}</p>
+            <Button
+                variant="contained"
+                sx={{ mt: 2 }}
+                onClick={handleExecute}
+            >
+                RUN
+            </Button>
         </div>
     );
 };
