@@ -1,37 +1,43 @@
 import React, { useState } from "react";
+import { Container, Typography, Box, Paper } from "@mui/material";
+
 import FileUpload from "./components/FileUpload";
 import SqlExecutor from "./components/SqlExecutor";
 import ResultsTable from "./components/ResultsTable";
-import { Container, Typography } from "@mui/material";
 
 function App() {
-  const [rows, setRows] = useState<Record<string, any>[]>([]);
-  const [message, setMessage] = useState("");
+  // Централно state за таблицата
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [rows, setRows] = useState<any[]>([]);
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        CSV Online SQL Editor
-      </Typography>
-
-      <FileUpload
-        setMessage={setMessage}
-        setRows={setRows}
-      />
-
-
-      <SqlExecutor
-        setRows={setRows}
-        setMessage={setMessage}
-      />
-
-      {message && (
-        <Typography sx={{ mt: 2 }}>
-          {message}
+    <Container maxWidth="lg">
+      <Box mt={4} mb={4}>
+        <Typography variant="h4" align="center" gutterBottom>
+          CSV Online SQL Editor
         </Typography>
-      )}
 
-      <ResultsTable rows={rows} />
+        {/* Upload Section */}
+        <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+          <FileUpload />
+        </Paper>
+
+        {/* SQL Section */}
+        <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+          <SqlExecutor
+            setHeaders={setHeaders}
+            setRows={setRows}
+          />
+        </Paper>
+
+        {/* Results Section */}
+        <Paper elevation={3} sx={{ p: 3 }}>
+          <ResultsTable
+            headers={headers}
+            rows={rows}
+          />
+        </Paper>
+      </Box>
     </Container>
   );
 }
