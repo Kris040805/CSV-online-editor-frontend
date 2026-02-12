@@ -9,10 +9,14 @@ import {
   DialogContent,
   DialogContentText,
 } from "@mui/material";
-
 import { uploadCsv } from "../services/api";
 
-function FileUpload() {
+interface FileUploadProps {
+  setRows: (rows: any[]) => void;
+  setHeaders: (headers: string[]) => void;
+}
+
+const FileUpload: React.FC<FileUploadProps> = ({ setRows, setHeaders }) => {
   const [file, setFile] = useState<File | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -38,15 +42,20 @@ function FileUpload() {
     }
 
     try {
-      // използваме готовата функция от services/api
-      await uploadCsv(file);
-
+      const data = await uploadCsv(file); // използваме централен API service
       setSnackbarMessage("File imported successfully!");
       setSnackbarSeverity("success");
       setOpenSnackbar(true);
       setOpenDialog(false);
+
+      // След upload, нулираме резултатите от SQL
+      setRows([]);
+      setHeaders([]);
+
+      // Ако backend върне данни за таблицата, можем да ги сетнем тук:
+      // setRows(data.rows || []);
+      // setHeaders(data.headers || []);
     } catch (error) {
-      console.error(error);
       setSnackbarMessage("Upload error.");
       setSnackbarSeverity("error");
       setOpenSnackbar(true);
@@ -91,6 +100,6 @@ function FileUpload() {
       </Snackbar>
     </>
   );
-}
+};
 
 export default FileUpload;

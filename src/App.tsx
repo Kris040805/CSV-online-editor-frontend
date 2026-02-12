@@ -19,7 +19,7 @@ function App() {
 
         {/* Upload Section */}
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-          <FileUpload />
+          <FileUpload setRows={setRows} setHeaders={setHeaders} />
         </Paper>
 
         {/* SQL Section */}
